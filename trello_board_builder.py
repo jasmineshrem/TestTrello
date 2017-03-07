@@ -11,7 +11,14 @@ def create_new_boards_from_lists_on_source_board(trello_obj, board):
     new_boards = []
     for trello_list in trello_lists:
         new_boards.append(trello_obj.create_board(trello_list.name))
+    for board in new_boards:
+        delete_initial_board_lists(trello_obj, board)
     return new_boards
+
+
+def delete_initial_board_lists(trello_obj, board):
+    for trello_list in trello_obj.get_open_lists(board):
+        trello_obj.close_list(board, trello_list.name)
 
 
 def create_cards_with_url_to_new_boards(trello_obj, source_board, new_boards):
@@ -45,6 +52,7 @@ def get_list_and_board(trello_obj, source_board, new_boards):
 
 def clone_cards_to_backlog(trello_obj, board, trello_list, card):
     return trello_obj.create_card(board, trello_list, card.name, source=card.id)
+
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
