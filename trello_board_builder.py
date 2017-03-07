@@ -69,5 +69,6 @@ if __name__ == "__main__":
     trello_obj = trello_class.TrelloClass(args.api_key, args.token)
     new_boards = create_new_boards_from_lists_on_source_board(trello_obj, args.master_board)
     list(delete_initial_board_lists(trello_obj, board) for board in new_boards)
+    create_lists_on_new_boards(trello_obj, new_boards)
     create_cards_with_url_to_new_boards(trello_obj, args.masterboard, new_boards)
     clone_cards_to_new_boards(trello_obj, args.masterboard, new_boards)
