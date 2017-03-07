@@ -26,12 +26,11 @@ class TestMethods(unittest.TestCase):
     def setUpClass(cls):
         cls.t = trello_class.TrelloClass(trello_token.API_KEY, trello_token.TOKEN)
         cls.masterboard = cls.t.create_board("motherboard")
-        for trello_list in cls.t.get_open_lists(cls.masterboard):
-            cls.t.close_list(cls.masterboard, trello_list.name)
+        trello_board_builder.delete_initial_board_lists(cls.t, cls.masterboard)
         for list_name, cards in motherboard.items():
             trello_list = cls.t.create_list(cls.masterboard, list_name)
-            for card in cards:
-                cls.t.create_card(cls.masterboard, trello_list, card)
+            list(cls.t.create_card(cls.masterboard, trello_list, card) for card in cards)
+        cls.new_boards = trello_board_builder.create_new_boards_from_lists_on_source_board(cls.t, cls.masterboard)
 
     @classmethod
     def tearDownClass(cls):
@@ -40,22 +39,19 @@ class TestMethods(unittest.TestCase):
                 cls.t.close_board(board)
 
     def test_create_new_boards_from_lists_on_source_board(self):
-        new_boards = trello_board_builder.create_new_boards_from_lists_on_source_board(self.t, self.masterboard)
-        self.assertCountEqual(["System 1", "System 2", "System 3"], get_names_of(new_boards))
+        self.assertCountEqual(["System 1", "System 2", "System 3"], get_names_of(self.new_boards))
 
     def test_create_card_with_url_to_new_boards(self):
-        new_boards = trello_board_builder.create_new_boards_from_lists_on_source_board(self.t, self.masterboard)
-        trello_board_builder.create_cards_with_url_to_new_boards(self.t, self.masterboard, new_boards)
+        trello_board_builder.create_cards_with_url_to_new_boards(self.t, self.masterboard, self.new_boards)
         for card in ["System 1", "System 2", "System 3"]:
             self.assertTrue(card in get_names_of(self.t.get_cards_on_board(self.masterboard)))
 
     def test_clone_cards_to_new_boards(self):
-        new_boards = trello_board_builder.create_new_boards_from_lists_on_source_board(self.t, self.masterboard)
-        new_cards = trello_board_builder.clone_cards_to_new_boards(self.t, self.masterboard, new_boards)
+        new_cards = trello_board_builder.clone_cards_to_new_boards(self.t, self.masterboard, self.new_boards)
         names_of_cards = get_names_of(new_cards)
         result = [
                 'System 2 - Task 1', 'System 2 - Task 2', 'System 2 - Task 3',
                 'System 1 - Task 1', 'System 1 - Task 2', 'System 1 - Task 3',
-                'System 3 - Task 1', 'System 3 - Task 2', 'System 3 - Task 3']
-        # self.fail(new_cards)
+                'System 3 - Task 1', 'System 3 - Task 2', 'System 3 - Task 3'
+                 ]
         self.assertCountEqual(result, names_of_cards)
