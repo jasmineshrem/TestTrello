@@ -31,15 +31,29 @@ class TestMethods(unittest.TestCase):
             trello_list = cls.t.create_list(cls.masterboard, list_name)
             list(cls.t.create_card(cls.masterboard, trello_list, card) for card in cards)
         cls.new_boards = trello_board_builder.create_new_boards_from_lists_on_source_board(cls.t, cls.masterboard)
+        list(trello_board_builder.delete_initial_board_lists(cls.t, board) for board in cls.new_boards)
 
     @classmethod
     def tearDownClass(cls):
-        for board in cls.t.get_open_boards():
-            if board.name in ["motherboard", "System 1", "System 2", "System 3"]:
-                cls.t.close_board(board)
+        list(cls.t.close_board(board) for board in cls.t.get_open_boards() if board.name in [
+            "motherboard", "System 1", "System 2", "System 3"])
 
     def test_create_new_boards_from_lists_on_source_board(self):
         self.assertCountEqual(["System 1", "System 2", "System 3"], get_names_of(self.new_boards))
+
+    def test_delete_initial_board_lists(self):
+        old_lists = ["To Do", "Doing", "Done"]
+        for old_list in old_lists:
+            self.assertTrue(old_list not in self.t.get_open_lists(self.masterboard))
+
+    def test_create_lists_on_new_boards(self):
+        created_lists = trello_board_builder.create_lists_on_new_boards(self.t, self.new_boards)
+        result = [
+                  'In Progress', 'Coding Done', 'QA', 'Final QA', 'QA Approved', 'In Progress',
+                  'Coding Done', 'QA', 'Final QA', 'QA Approved', 'In Progress', 'Coding Done',
+                  'QA', 'Final QA', 'QA Approved'
+                  ]
+        self.assertCountEqual(result, get_names_of(created_lists))
 
     def test_create_card_with_url_to_new_boards(self):
         trello_board_builder.create_cards_with_url_to_new_boards(self.t, self.masterboard, self.new_boards)
